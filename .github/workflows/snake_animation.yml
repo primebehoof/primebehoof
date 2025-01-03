@@ -1,0 +1,57 @@
+# Schedule the workflow to run daily at midnight UTC
+schedule:
+  # Cron syntax: "minute hour day(month) month day(week)"
+  - cron: "0 0 * * *"
+
+# Allow the workflow to be triggered manually via GitHub Actions
+workflow_dispatch:
+
+# Trigger the workflow automatically on pushes to the main branch
+push:
+  branches:
+    - main
+
+jobs:
+  generate:
+    # Define the environment in which the workflow will run
+    runs-on: ubuntu-latest
+
+    # Set a timeout limit to prevent the job from running indefinitely
+    timeout-minutes: 15
+
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Generate snake animations for GitHub contributions
+      - name: Generate GitHub Contributions Snake Animations
+        uses: Platane/snk@v3
+        with:
+          # Specify the GitHub username for which the animation is generated
+          github_user_name: ${{ github.repository_owner }}
+
+          # Define the output files and their configurations
+          outputs: |
+            # Generate an SVG file for the default palette
+            dist/github-snake.svg
+            # Generate a dark-themed SVG file
+            dist/github-snake-dark.svg?palette=github-dark
+            # Generate a GIF file with custom colors for the snake and dots
+            dist/ocean.gif?color_snake=orange&color_dots=#bfd6f6,#8dbdff,#64a1f4,#4b91f1,#3c7dd9
+        env:
+          # Use the GitHub token to authenticate and interact with the repository
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 3: Deploy the generated files to the 'output' branch
+      - name: Deploy to Output Branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          # Use the GitHub token to push changes to the repository
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Specify the directory containing the files to publish
+          publish_dir: ./dist
+          # Specify the branch where the files will be published
+          publish_branch: output
+          # Set a custom commit message for the deployment
+          commit_message: "Update snake animation [skip ci]"
