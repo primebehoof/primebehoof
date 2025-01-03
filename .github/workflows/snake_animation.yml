@@ -1,30 +1,42 @@
-# Schedule the workflow to run daily at midnight UTC
-schedule:
-  # Cron syntax: "minute hour day(month) month day(week)"
-  - cron: "0 0 * * *"
+# File: .github/workflows/snake_animation.yml
+# Last Updated: 2025/01/03
 
-# Allow the workflow to be triggered manually via GitHub Actions
-workflow_dispatch:
+# Description: GitHub Actions workflow for generating GitHub Contributions Snake animations and deploying them to the 'output' branch.
+# Trigger: Runs daily at midnight UTC, on push to the main branch, or can be triggered manually.
+# Outputs: SVG and GIF files for the GitHub Snake game, displayed on the repository's 'output' branch.
+# Workflow Dependencies:
+# - Platane/snk: Used for generating the GitHub Snake animation.
+# - peaceiris/actions-gh-pages: Deploys the generated files to the 'output' branch.
 
-# Trigger the workflow automatically on pushes to the main branch
-push:
-  branches:
-    - main
+name: GitHub Snake Game
+
+on:
+  # Schedule the workflow to run daily at midnight UTC
+  schedule:
+    - cron: "0 0 * * *"
+
+  # Allow manual triggering of the workflow via the GitHub Actions UI
+  workflow_dispatch:
+
+  # Trigger the workflow automatically on pushes to the main branch
+  push:
+    branches:
+      - main
 
 jobs:
   generate:
-    # Define the environment in which the workflow will run
+    # Define the environment for the job (Ubuntu latest version)
     runs-on: ubuntu-latest
 
-    # Set a timeout limit to prevent the job from running indefinitely
+    # Set a timeout for the job to prevent it from running indefinitely
     timeout-minutes: 10
 
     steps:
-      # Step 1: Check out the repository code
+      # Step 1: Checkout the repository to ensure the workflow has access to the code
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2: Generate snake animations for GitHub contributions
+      # Step 2: Generate the snake animations using Platane's GitHub Snake Action
       - name: Generate GitHub Contributions Snake Animations
         uses: Platane/snk@v3
         with:
@@ -37,21 +49,25 @@ jobs:
             dist/github-snake.svg
             # Generate a dark-themed SVG file
             dist/github-snake-dark.svg?palette=github-dark
-            # Generate a GIF file with custom colors for the snake and dots
+            # Generate a GIF file with custom snake and dot colors
             dist/ocean.gif?color_snake=orange&color_dots=#bfd6f6,#8dbdff,#64a1f4,#4b91f1,#3c7dd9
+
         env:
-          # Use the GitHub token to authenticate and interact with the repository
+          # Use GitHub token for authentication
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 3: Deploy the generated files to the 'output' branch
+      # Step 3: Deploy the generated files to the 'output' branch for publishing
       - name: Deploy to Output Branch
         uses: peaceiris/actions-gh-pages@v3
         with:
-          # Use the GitHub token to push changes to the repository
+          # GitHub token to authenticate for pushing changes
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # Specify the directory containing the files to publish
+          
+          # Directory containing the files to publish
           publish_dir: ./dist
-          # Specify the branch where the files will be published
+          
+          # Specify the branch where the files will be published (output branch)
           publish_branch: output
-          # Set a custom commit message for the deployment
+          
+          # Commit message for the update, use [skip ci] to avoid triggering another CI build
           commit_message: "Update snake animation [skip ci]"
